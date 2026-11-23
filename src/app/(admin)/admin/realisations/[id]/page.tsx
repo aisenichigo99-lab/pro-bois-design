@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/supabase/auth";
+import { AdminShell } from "@/components/admin/AdminShell";
 import {
   getRealisation,
   getCategoriesForForm,
@@ -54,49 +55,51 @@ export default async function EditRealisationPage({
     "use server";
     return updateRealisation(id, fd);
   };
-
+  const user = await requireAdmin();
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 p-6 md:p-10">
-      <div className="max-w-4xl mx-auto">
-        <header className="mb-8">
-          <p className="text-xs uppercase tracking-widest text-amber-500 mb-2">
-            Admin
-          </p>
-
-          <h1 className="text-3xl font-light">Éditer : {r.titre}</h1>
-
-          {ok && (
-            <p className="text-sm text-emerald-400 mt-2">
-              ✅ Modifications enregistrées
+    <AdminShell email={user.email ?? ""}>
+      <main className="min-h-screen bg-neutral-950 text-neutral-100 p-6 md:p-10">
+        <div className="max-w-4xl mx-auto">
+          <header className="mb-8">
+            <p className="text-xs uppercase tracking-widest text-amber-500 mb-2">
+              Admin
             </p>
-          )}
-        </header>
 
-        <RealisationForm
-          categories={categories}
-          tags={tags}
-          initial={{
-            id: r.id,
-            titre: r.titre,
-            slug: r.slug,
-            description_courte: r.description_courte ?? "",
-            description_longue: r.description_longue ?? "",
-            categorie_id: r.categorie_id ?? "",
-            annee: r.annee,
-            lieu: r.lieu ?? "",
-            dimensions: r.dimensions ?? "",
-            duree_realisation: r.duree_realisation ?? "",
-            statut: r.statut,
-            a_la_une: r.a_la_une,
-            seo_title: r.seo_title ?? "",
-            seo_description: r.seo_description ?? "",
-            tags: initialTags,
-            photos: initialPhotos,
-          }}
-          action={action}
-          submitLabel="Enregistrer"
-        />
-      </div>
-    </main>
+            <h1 className="text-3xl font-light">Éditer : {r.titre}</h1>
+
+            {ok && (
+              <p className="text-sm text-emerald-400 mt-2">
+                ✅ Modifications enregistrées
+              </p>
+            )}
+          </header>
+
+          <RealisationForm
+            categories={categories}
+            tags={tags}
+            initial={{
+              id: r.id,
+              titre: r.titre,
+              slug: r.slug,
+              description_courte: r.description_courte ?? "",
+              description_longue: r.description_longue ?? "",
+              categorie_id: r.categorie_id ?? "",
+              annee: r.annee,
+              lieu: r.lieu ?? "",
+              dimensions: r.dimensions ?? "",
+              duree_realisation: r.duree_realisation ?? "",
+              statut: r.statut,
+              a_la_une: r.a_la_une,
+              seo_title: r.seo_title ?? "",
+              seo_description: r.seo_description ?? "",
+              tags: initialTags,
+              photos: initialPhotos,
+            }}
+            action={action}
+            submitLabel="Enregistrer"
+          />
+        </div>
+      </main>
+    </AdminShell>
   );
 }

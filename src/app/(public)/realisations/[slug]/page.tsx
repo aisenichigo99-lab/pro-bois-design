@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getPublishedBySlug } from "@/lib/db/public";
+import { TrackView } from "@/components/public/TrackView";
+import { QuoteButton } from "@/components/public/QuoteButton";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -35,6 +37,7 @@ export default async function RealisationDetailPage({ params }: Props) {
 
   return (
     <main>
+      <TrackView realisationId={r.id} />
       <section className="pbd-detail-hero">
         <p className="pbd-k">
           <Link
@@ -73,9 +76,7 @@ export default async function RealisationDetailPage({ params }: Props) {
         )}
 
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <a href="mailto:contact@probois-design.com" className="pbd-btn">
-            Demander un devis similaire
-          </a>
+          <QuoteButton realisationId={r.id} />
           <Link href="/realisations" className="pbd-btn ghost">
             ← Toutes les réalisations
           </Link>
