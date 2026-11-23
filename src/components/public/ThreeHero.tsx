@@ -356,33 +356,50 @@ export function ThreeHero() {
       S.add(dust);
 
       // Caméra
-      const KF = [
+      type Vec3 = [number, number, number];
+
+      type CameraKeyframe = [number, Vec3, Vec3];
+
+      const KF: CameraKeyframe[] = [
         [0, [5.2, 2.8, 7.4], [0, 1.0, 0]],
         [0.25, [-3.6, 3.6, 5.6], [0, 1.7, 0]],
         [0.5, [0.6, 2.5, 2.6], [0, 1.45, 0]],
         [0.75, [6.4, 1.9, 4.2], [3, 0.5, -0.2]],
         [1, [4.2, 2.4, 8], [0, 1.0, 0]],
       ];
-      function cam(p: number, mob: boolean) {
+      function cam(p: number, mob: boolean): [Vec3, Vec3] {
         for (let i = 0; i < KF.length - 1; i++) {
           const a = KF[i];
           const b = KF[i + 1];
+
           if (p <= b[0]) {
             let t = (p - a[0]) / (b[0] - a[0]);
             t = t * t * (3 - 2 * t);
-            const o = [0, 1, 2].map((k) => a[1][k] + (b[1][k] - a[1][k]) * t);
-            const l = [0, 1, 2].map((k) => a[2][k] + (b[2][k] - a[2][k]) * t);
+
+            const o: Vec3 = [
+              a[1][0] + (b[1][0] - a[1][0]) * t,
+              a[1][1] + (b[1][1] - a[1][1]) * t,
+              a[1][2] + (b[1][2] - a[1][2]) * t,
+            ];
+
+            const l: Vec3 = [
+              a[2][0] + (b[2][0] - a[2][0]) * t,
+              a[2][1] + (b[2][1] - a[2][1]) * t,
+              a[2][2] + (b[2][2] - a[2][2]) * t,
+            ];
+
             if (mob) {
               o[0] *= 1.1;
               o[1] += 0.8;
               o[2] *= 1.5;
             }
+
             return [o, l];
           }
         }
+
         return [KF[4][1], KF[4][2]];
       }
-
       // Progress scroll
       let prog = 0;
       let sm = 0;
