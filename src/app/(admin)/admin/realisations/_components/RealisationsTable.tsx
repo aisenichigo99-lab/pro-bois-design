@@ -108,28 +108,40 @@ export function RealisationsTable({ items }: { items: Item[] }) {
                   </button>
                 </td>
                 <td className="px-4 py-3 text-right whitespace-nowrap">
-                  <button
-                    onClick={() => run(() => toggleStatut(r.id, r.statut))}
-                    className="text-xs px-3 py-1.5 rounded-md border border-neutral-700 hover:bg-neutral-800 transition mr-2"
-                  >
-                    {r.statut === "publie" ? "Dépublier" : "Publier"}
-                  </button>
-                  <button
-                    onClick={() => run(() => duplicateRealisation(r.id))}
-                    className="text-xs px-3 py-1.5 rounded-md border border-neutral-700 hover:bg-neutral-800 transition mr-2"
-                  >
-                    Dupliquer
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Supprimer « ${r.titre} » ?`)) {
-                        run(() => deleteRealisation(r.id));
-                      }
-                    }}
-                    className="text-xs px-3 py-1.5 rounded-md border border-red-900/60 text-red-400 hover:bg-red-950/40 transition"
-                  >
-                    Supprimer
-                  </button>
+                  <div className="inline-flex gap-1.5">
+                    <button
+                      onClick={() => run(() => toggleStatut(r.id, r.statut))}
+                      className="text-xs px-2.5 py-1.5 rounded-md border border-neutral-700 hover:bg-neutral-800 transition"
+                      title={r.statut === "publie" ? "Dépublier" : "Publier"}
+                    >
+                      <span className="hidden sm:inline">
+                        {r.statut === "publie" ? "Dépublier" : "Publier"}
+                      </span>
+                      <span className="sm:hidden">
+                        {r.statut === "publie" ? "🚫" : "✅"}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => run(() => duplicateRealisation(r.id))}
+                      className="text-xs px-2.5 py-1.5 rounded-md border border-neutral-700 hover:bg-neutral-800 transition"
+                      title="Dupliquer"
+                    >
+                      <span className="hidden sm:inline">Dupliquer</span>
+                      <span className="sm:hidden">📋</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Supprimer « ${r.titre} » ?`)) {
+                          run(() => deleteRealisation(r.id));
+                        }
+                      }}
+                      className="text-xs px-2.5 py-1.5 rounded-md border border-red-900/60 text-red-400 hover:bg-red-950/40 transition"
+                      title="Supprimer"
+                    >
+                      <span className="hidden sm:inline">Supprimer</span>
+                      <span className="sm:hidden">🗑️</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             );

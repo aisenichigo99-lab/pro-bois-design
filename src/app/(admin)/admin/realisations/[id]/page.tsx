@@ -38,18 +38,19 @@ export default async function EditRealisationPage({
 
   if (!r) notFound();
 
-  const initialPhotos = (r.photos ?? []).map((p) => ({
-    url: p.url,
-    public_id: p.public_id!,
-    width: p.width ?? undefined,
-    height: p.height ?? undefined,
-    alt: p.alt ?? undefined,
-  }));
+  const initialPhotos = (r.photos ?? []).map(
+    (p: (typeof r.photos)[number]) => ({
+      url: p.url,
+      public_id: p.public_id!,
+      width: p.width ?? undefined,
+      height: p.height ?? undefined,
+      alt: p.alt ?? undefined,
+    }),
+  );
 
   const initialTags = (r.tags ?? [])
-    .map((t) => t.tag?.id)
-    .filter((x): x is string => !!x);
-
+    .map((t: (typeof r.tags)[number]) => t.tag?.id)
+    .filter((x: string | undefined): x is string => !!x);
   // Action wrapper : lie l'id
   const action = async (fd: FormData) => {
     "use server";

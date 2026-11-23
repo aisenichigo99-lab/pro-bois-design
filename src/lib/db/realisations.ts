@@ -20,6 +20,7 @@ export async function listRealisations(opts?: {
   statut?: string;
 }) {
   const supabase = await createClient();
+
   let q = supabase
     .from("realisations")
     .select(LIST_SELECT)
@@ -28,15 +29,22 @@ export async function listRealisations(opts?: {
   if (opts?.statut && opts.statut !== "all") {
     q = q.eq("statut", opts.statut);
   }
+
   if (opts?.search?.trim()) {
     q = q.ilike("titre", `%${opts.search.trim()}%`);
   }
 
   const { data, error } = await q;
-  if (error) throw error;
-  return data ?? [];
-}
 
+  if (error) throw error;
+
+  return (data ?? []).map((item) => ({
+    ...item,
+    categorie: Array.isArray(item.categorie)
+      ? (item.categorie[0] ?? null)
+      : item.categorie,
+  }));
+}
 export async function getRealisation(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase

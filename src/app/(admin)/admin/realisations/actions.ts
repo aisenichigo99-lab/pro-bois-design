@@ -1,16 +1,30 @@
 "use server";
 
+import { revalidateTag, revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { RealisationFormSchema } from "@/lib/validators/realisation";
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 type ActionResult = { error?: string; ok?: boolean };
 
+/**
+ * Invalide à la fois :
+ * - les tags de cache "use cache" (realisations, categories, tags)
+ * - les paths admin + public
+ * - le tag spécifique par slug si fourni
+ */
 function revalidateAll(slug?: string) {
+  // Tags de cache (utilisés par "use cache" dans lib/db/public.ts)
+  revalidateTag("realisations", "max");
+  revalidateTag("categories", "max");
+  revalidateTag("tags", "max");
+  if (slug) revalidateTag(`realisation-${slug}`, "max");
+
+  // Paths (fallback pour les routes non cachées par tag)
   revalidatePath("/admin/realisations");
   revalidatePath("/realisations");
+  revalidatePath("/");
   if (slug) revalidatePath(`/realisations/${slug}`);
 }
 
@@ -21,7 +35,6 @@ export async function createRealisation(
   const user = await requireAdmin();
   const supabase = await createClient();
 
-  // Parse
   const raw = {
     titre: formData.get("titre"),
     slug: formData.get("slug"),
@@ -42,13 +55,12 @@ export async function createRealisation(
 
   const parsed = RealisationFormSchema.safeParse(raw);
   if (!parsed.success) {
-    const first = parsed.error.errors[0];
+    const first = parsed.error.issues[0];
     return { error: `${first.path.join(".")}: ${first.message}` };
   }
 
   const v = parsed.data;
 
-  // Insert réalisation
   const { data: created, error } = await supabase
     .from("realisations")
     .insert({
@@ -77,7 +89,6 @@ export async function createRealisation(
     return { error: error?.message || "Erreur création" };
   }
 
-  // Photos
   if (v.photos.length) {
     await supabase.from("realisation_photos").insert(
       v.photos.map((p, i) => ({
@@ -93,7 +104,6 @@ export async function createRealisation(
     );
   }
 
-  // Tags
   if (v.tags.length) {
     await supabase.from("realisation_tags").insert(
       v.tags.map((tag_id) => ({
@@ -103,7 +113,6 @@ export async function createRealisation(
     );
   }
 
-  // Audit
   await supabase.from("audit_log").insert({
     user_id: user.id,
     user_email: user.email,
@@ -125,6 +134,12 @@ export async function updateRealisation(
   const user = await requireAdmin();
   const supabase = await createClient();
 
+  const { data: before } = await supabase
+    .from("realisations")
+    .select("slug")
+    .eq("id", id)
+    .single();
+
   const raw = {
     titre: formData.get("titre"),
     slug: formData.get("slug"),
@@ -145,12 +160,11 @@ export async function updateRealisation(
 
   const parsed = RealisationFormSchema.safeParse(raw);
   if (!parsed.success) {
-    const first = parsed.error.errors[0];
+    const first = parsed.error.issues[0];
     return { error: `${first.path.join(".")}: ${first.message}` };
   }
   const v = parsed.data;
 
-  // Update réalisation
   const { error } = await supabase
     .from("realisations")
     .update({
@@ -177,7 +191,6 @@ export async function updateRealisation(
     return { error: error.message };
   }
 
-  // Photos : delete + reinsert (simple et fiable)
   await supabase.from("realisation_photos").delete().eq("realisation_id", id);
   if (v.photos.length) {
     await supabase.from("realisation_photos").insert(
@@ -194,7 +207,6 @@ export async function updateRealisation(
     );
   }
 
-  // Tags : delete + reinsert
   await supabase.from("realisation_tags").delete().eq("realisation_id", id);
   if (v.tags.length) {
     await supabase
@@ -212,6 +224,10 @@ export async function updateRealisation(
   });
 
   revalidateAll(v.slug);
+  if (before?.slug && before.slug !== v.slug) {
+    revalidateTag(`realisation-${before.slug}`, "max");
+    revalidatePath(`/realisations/${before.slug}`);
+  }
   return { ok: true };
 }
 
@@ -331,7 +347,6 @@ export async function duplicateRealisation(id: string): Promise<ActionResult> {
 
   if (error || !created) return { error: error?.message };
 
-  // Copier photos
   const { data: photos } = await supabase
     .from("realisation_photos")
     .select("url, public_id, alt, ordre, is_cover, width, height")
@@ -342,7 +357,6 @@ export async function duplicateRealisation(id: string): Promise<ActionResult> {
       .insert(photos.map((p) => ({ ...p, realisation_id: created.id })));
   }
 
-  // Copier tags
   const { data: rtags } = await supabase
     .from("realisation_tags")
     .select("tag_id")
@@ -355,6 +369,7 @@ export async function duplicateRealisation(id: string): Promise<ActionResult> {
       );
   }
 
+  revalidateTag("realisations", "max");
   revalidatePath("/admin/realisations");
   return { ok: true };
 }

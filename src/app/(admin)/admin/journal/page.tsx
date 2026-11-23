@@ -1,7 +1,6 @@
 import { requireAdmin } from "@/lib/supabase/auth";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { createClient } from "@/lib/supabase/server";
-
 export const metadata = { title: "Journal — Admin" };
 
 export default async function JournalPage() {

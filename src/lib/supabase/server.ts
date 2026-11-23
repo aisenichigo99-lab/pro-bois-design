@@ -1,6 +1,6 @@
 import { createServerClient as createSSRClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 export async function createClient() {
   const cookieStore = await cookies();
 
@@ -22,6 +22,23 @@ export async function createClient() {
             // (le middleware gère le refresh)
           }
         },
+      },
+    },
+  );
+}
+/**
+ * Client Supabase pour les données publiques mises en cache.
+ * N'utilise PAS cookies() → compatible avec "use cache".
+ */
+export function createPublicClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
       },
     },
   );

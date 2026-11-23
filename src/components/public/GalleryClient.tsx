@@ -327,7 +327,7 @@ export function GalleryClient({ items, categories, tags }: Props) {
                     <div className="pbd-spec-label">Essence</div>
                     <div className="pbd-spec-value">
                       {modal.essences
-                        .map((s) => tags.find((t) => t.slug === s)?.nom)
+                        .map((s: string) => tags.find((t) => t.slug === s)?.nom)
                         .filter(Boolean)
                         .join(", ")}
                     </div>
@@ -347,15 +347,19 @@ export function GalleryClient({ items, categories, tags }: Props) {
               </div>
               {modal.photos.length > 1 && (
                 <div className="pbd-modal-gallery">
-                  {modal.photos.map((p, i) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      key={i}
-                      src={p.url}
-                      alt={p.alt || modal.titre}
-                      loading="lazy"
-                    />
-                  ))}
+                  {modal.photos.map(
+                    (
+                      p: (typeof modal.photos)[number],
+                      i: number, // eslint-disable-next-line @next/next/no-img-element
+                    ) => (
+                      <img
+                        key={i}
+                        src={p.url}
+                        alt={p.alt || modal.titre}
+                        loading="lazy"
+                      />
+                    ),
+                  )}
                 </div>
               )}
             </div>

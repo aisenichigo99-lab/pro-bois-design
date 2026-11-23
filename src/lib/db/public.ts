@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/server";
+import { cacheTag } from "next/cache";
 
 const PUBLIC_LIST_SELECT = `
   id, slug, titre, description_courte, annee, lieu,
@@ -13,7 +14,10 @@ const PUBLIC_LIST_SELECT = `
  * Utilisée par la galerie publique + le sitemap.
  */
 export async function listPublishedRealisations() {
-  const supabase = await createClient();
+  "use cache";
+  cacheTag("realisations");
+
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("realisations")
     .select(PUBLIC_LIST_SELECT)
@@ -28,7 +32,11 @@ export async function listPublishedRealisations() {
  * Récupère une réalisation publiée par son slug.
  */
 export async function getPublishedBySlug(slug: string) {
-  const supabase = await createClient();
+  "use cache";
+  cacheTag("realisations");
+  cacheTag(`realisation-${slug}`);
+
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("realisations")
     .select(
@@ -51,7 +59,11 @@ export async function getPublishedBySlug(slug: string) {
  * Catégories actives + tags, pour les filtres.
  */
 export async function getFilterOptions() {
-  const supabase = await createClient();
+  "use cache";
+  cacheTag("categories");
+  cacheTag("tags");
+
+  const supabase = createPublicClient();
   const [cats, tags] = await Promise.all([
     supabase
       .from("categories")
@@ -68,6 +80,45 @@ export async function getFilterOptions() {
     categories: cats.data ?? [],
     tags: tags.data ?? [],
   };
+}
+
+/**
+ * Récupère les réalisations "à la une" (max N).
+ * Triées par ordre_affichage puis published_at desc.
+ */
+export async function getFeaturedRealisations(limit = 3) {
+  "use cache";
+  cacheTag("realisations");
+
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("realisations")
+    .select(PUBLIC_LIST_SELECT)
+    .eq("a_la_une", true)
+    .order("ordre_affichage", { ascending: true })
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []).map(normalize);
+}
+
+/**
+ * Récupère les dernières réalisations publiées (fallback si aucune à la une).
+ */
+export async function getLatestRealisations(limit = 3) {
+  "use cache";
+  cacheTag("realisations");
+
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("realisations")
+    .select(PUBLIC_LIST_SELECT)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []).map(normalize);
 }
 
 /**
@@ -106,35 +157,3 @@ export function normalize(r: any) {
 }
 
 export type PublicRealisation = ReturnType<typeof normalize>;
-/**
- * Récupère les réalisations "à la une" (max N).
- * Triées par ordre_affichage puis published_at desc.
- */
-export async function getFeaturedRealisations(limit = 3) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("realisations")
-    .select(PUBLIC_LIST_SELECT)
-    .eq("a_la_une", true)
-    .order("ordre_affichage", { ascending: true })
-    .order("published_at", { ascending: false })
-    .limit(limit);
-
-  if (error) throw error;
-  return (data ?? []).map(normalize);
-}
-
-/**
- * Récupère les dernières réalisations publiées (fallback si aucune à la une).
- */
-export async function getLatestRealisations(limit = 3) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("realisations")
-    .select(PUBLIC_LIST_SELECT)
-    .order("published_at", { ascending: false })
-    .limit(limit);
-
-  if (error) throw error;
-  return (data ?? []).map(normalize);
-}
